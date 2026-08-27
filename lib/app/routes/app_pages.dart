@@ -2,6 +2,8 @@ import 'package:get/get.dart';
 
 import '../../modules/home/bindings/home_binding.dart';
 import '../../modules/home/views/home_view.dart';
+import '../../modules/level_category/bindings/level_category_binding.dart';
+import '../../modules/level_category/views/level_category_view.dart';
 import '../../modules/level_play/bindings/level_play_binding.dart';
 import '../../modules/level_play/views/level_play_view.dart';
 import '../../modules/level_select/bindings/level_select_binding.dart';
@@ -18,6 +20,11 @@ abstract class AppPages {
       name: Routes.home,
       page: () => const HomeView(),
       binding: HomeBinding(),
+    ),
+    GetPage(
+      name: Routes.levelCategory,
+      page: () => const LevelCategoryView(),
+      binding: LevelCategoryBinding(),
     ),
     GetPage(
       name: Routes.levelSelect,

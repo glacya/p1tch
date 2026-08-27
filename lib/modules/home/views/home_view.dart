@@ -17,7 +17,7 @@ class HomeView extends GetView<HomeController> {
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
             ElevatedButton(
-              onPressed: () => Get.toNamed(Routes.levelSelect),
+              onPressed: () => Get.toNamed(Routes.levelCategory),
               child: const Text('Play'),
             ),
             const SizedBox(height: 12),
