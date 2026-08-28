@@ -1,11 +1,16 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_soloud/flutter_soloud.dart';
 import 'package:get/get.dart';
+import 'package:p2tch/app/services/audio_service.dart';
 
 import 'app/routes/app_pages.dart';
 import 'app/routes/app_routes.dart';
 import 'app/theme/app_theme.dart';
 
-void main() {
+Future<void> main() async {
+  await SoLoud.instance.init();
+  await Get.putAsync<AudioService>(() => AudioService().init());
+
   runApp(const MyApp());
 }
 
@@ -15,7 +20,7 @@ class MyApp extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return GetMaterialApp(
-      title: 'Puzzle Game',
+      title: 'P1tch',
       theme: AppTheme.light,
       initialRoute: Routes.home,
       getPages: AppPages.pages,

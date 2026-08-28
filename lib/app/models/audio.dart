@@ -4,23 +4,26 @@ import 'package:flutter_soloud/flutter_soloud.dart';
 
 class Audio {
   final Timbre timbre;
-  // AbsoluteSemitone = 12 * log2(freq / 440)
-  final double absoluteSemitone;
-  final AudioSource source;
+  // RelativeSemitone = 12 * log2(freq / 440)
+  final double relativeSemitone;
+  final String keyName;
+  AudioSource? source;
   
-  Audio(this.timbre, this.absoluteSemitone, this.source);
+  Audio(this.timbre, this.relativeSemitone, this.keyName);
 
-
-  double frequency() {
-    return 440.0 * pow(2, absoluteSemitone / 12.0);
+  static double _rstToFreq(double relativeSemitone) {
+    return 440.0 * pow(2, relativeSemitone / 12.0);
   }
 
-  double frequencyRatio(Audio other) {
-    return frequency() / other.frequency();
+  double frequency() {
+    return _rstToFreq(relativeSemitone);
+  }
+
+  double frequencyRatio(double relativeSemitone) {
+    return _rstToFreq(relativeSemitone) / _rstToFreq(this.relativeSemitone);
   }
 }
 
 enum Timbre {
   piano,
-  
 }

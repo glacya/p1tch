@@ -1,0 +1,15 @@
+[
+    {
+        "categoryId": 0,
+        "names": [
+            {
+                "locale": "ko-kr",
+                "name": "시작"
+            },
+            {
+                "locale": "en-us",
+                "name": "Departure"
+            }
+        ]
+    }
+]
