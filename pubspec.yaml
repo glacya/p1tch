@@ -33,8 +33,11 @@ dependencies:
 
   get: ^4.7.3
 
-  flutter_soloud: ^4.1.7
-  web: ^1.1.1
+  # Pinned prerelease (not ^-ranged - pub won't resolve prereleases via
+  # caret): 5.0.0-pre.0 added play(scale:), which sets relative play speed
+  # atomically before a voice can render any audio, replacing a separate
+  # post-play() setRelativePlaySpeed() call that raced unpredictably.
+  flutter_soloud: 5.0.0-pre.1
 
   # The following adds the Cupertino Icons font to your application.
   # Use with the CupertinoIcons class for iOS style icons.
@@ -63,8 +66,14 @@ flutter:
   uses-material-design: true
 
   assets:
-    - assets/audio/
+    # Top level
     - assets/levels/
+
+    # Audio samples
+    - assets/audio/piano/
+
+    # Level data
+    - assets/levels/departure
 
   # To add assets to your application, add an assets section, like this:
   # assets:

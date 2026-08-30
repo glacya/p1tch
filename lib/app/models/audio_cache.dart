@@ -46,6 +46,7 @@ class AudioCache {
     AudioCacheEntry victim = victims.fold(victims.first, (acc, next) => next.lastAccessed < acc.lastAccessed ? next : acc);
 
     if (victim.audio.source != null) {
+      SoLoud.instance.disposeSource(victim.audio.source!);
       victim.audio.source = null;
       _loaded--;
     }
@@ -99,8 +100,6 @@ class AudioCacheLine {
   final Timbre timbre;
   final List<AudioCacheEntry> entries = [];
 
-  static const String _keys = "f2 a2 c3s f3 a3 c4s f4 a4 c5s f5 a5 c6s f6 a6 c7s";
-
   AudioCacheLine(this.timbre);
 
   Future<void> initSample() async {
@@ -111,12 +110,10 @@ class AudioCacheLine {
     assert((maxSemitoneValue - minSemitoneValue) % sampleSemitoneDiff == 0 
       && (maxSemitoneValue - minSemitoneValue) ~/ sampleSemitoneDiff + 1 == samplePerTimbre);
 
-    List<String> keys = _keys.split(' ');
-
     for (int i = 0; i < samplePerTimbre; i++) {
       int tone = minSemitoneValue + i * sampleSemitoneDiff;
 
-      Audio audio = Audio(timbre, tone.toDouble(), keys[i]);
+      Audio audio = Audio(timbre, tone.toDouble(), audioKeys[i]);
       AudioCacheEntry entry = AudioCacheEntry(audio);
       entries.add(entry);
     }

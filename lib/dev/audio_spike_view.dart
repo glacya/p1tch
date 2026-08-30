@@ -5,12 +5,12 @@ import 'package:flutter/services.dart' show rootBundle;
 import 'package:flutter_soloud/flutter_soloud.dart';
 
 /// Throwaway spike to validate resampling-based pitch shifting (via
-/// flutter_soloud's setRelativePlaySpeed) across the pitch range this game
-/// actually needs: any target note is within one octave of its nearest base
-/// sample, i.e. a ratio in [sqrt(2)/2, sqrt(2)]. Unlike a duration-preserving
-/// shift, resampling changes playback duration along with pitch - that
-/// trade-off is accepted in favor of SoLoud's built-in, cross-platform
-/// implementation over a custom Web-only DSP path.
+/// flutter_soloud's play(scale:)) across the pitch range this game actually
+/// needs: any target note is within one octave of its nearest base sample,
+/// i.e. a ratio in [sqrt(2)/2, sqrt(2)]. Unlike a duration-preserving shift,
+/// resampling changes playback duration along with pitch - that trade-off is
+/// accepted in favor of SoLoud's built-in, cross-platform implementation
+/// over a custom Web-only DSP path.
 /// Not part of the shipped module structure - see CLAUDE.md "Audio" section.
 /// Delete once the real audio pipeline replaces it.
 class AudioSpikeView extends StatefulWidget {
@@ -21,7 +21,7 @@ class AudioSpikeView extends StatefulWidget {
 }
 
 class _AudioSpikeViewState extends State<AudioSpikeView> {
-  static const _fileName = 'a4.wav';
+  static const _fileName = 'piano/a4.wav';
   static final _minRatio = math.sqrt2 / 2;
   static final _maxRatio = math.sqrt2;
 
@@ -58,16 +58,20 @@ class _AudioSpikeViewState extends State<AudioSpikeView> {
     }
   }
 
-  Future<void> _play() async {
+  void _play() {
     final source = _source;
     if (source == null) return;
 
     debugPrint('play(pitchRatio: $_pitchRatio)');
-    // Start paused so the speed change lands before any audio is audible,
-    // per SoLoud.play's own guidance for setRelativePlaySpeed.
-    final handle = SoLoud.instance.play(source, paused: true);
-    SoLoud.instance.setRelativePlaySpeed(handle, _pitchRatio);
-    SoLoud.instance.setPause(handle, false);
+    // Player::play() (the native side of SoLoud.play) always creates the
+    // voice internally paused, applies `scale` to it while still paused,
+    // and only then unpauses - all inside one synchronous native call. So
+    // passing the ratio as `scale` here is atomic: the engine can't ever
+    // render a frame at the unshifted speed. Calling play() and then a
+    // separate setRelativePlaySpeed() afterwards (what this used to do)
+    // reintroduces exactly the gap that guarantee is meant to close, and
+    // raced unpredictably.
+    SoLoud.instance.play(source, scale: _pitchRatio);
   }
 
   @override
