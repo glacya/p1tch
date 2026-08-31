@@ -90,7 +90,7 @@ class AudioCache {
       index += 1;
     }
 
-    assert(index * step >= minSemitoneValue && index * step <= maxSemitoneValue);
+    assert(index * step >= 0 && index * step <= maxSemitoneValue - minSemitoneValue);
 
     return index;
   }

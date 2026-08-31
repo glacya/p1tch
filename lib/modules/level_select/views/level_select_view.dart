@@ -11,12 +11,57 @@ class LevelSelectView extends GetView<LevelSelectController> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(title: const Text('Select Level')),
-      body: Center(
-        // TODO: replace with a real level list once levels are modeled.
-        child: ElevatedButton(
-          onPressed: () => Get.toNamed(Routes.levelPlay),
-          child: const Text('Level 1'),
-        ),
+      body: GetBuilder<LevelSelectController>(
+        builder: (controller) {
+          if (controller.isLoading) {
+            return const Center(child: CircularProgressIndicator());
+          }
+          if (controller.errorMessage != null) {
+            return Center(
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Text(controller.errorMessage!),
+                  const SizedBox(height: 12),
+                  ElevatedButton(
+                    onPressed: controller.retry,
+                    child: const Text('Retry'),
+                  ),
+                ],
+              ),
+            );
+          }
+
+          final category = controller.category!;
+          return Center(
+            child: Padding(
+              padding: const EdgeInsets.all(16),
+              child: GridView.count(
+                shrinkWrap: true,
+                physics: const NeverScrollableScrollPhysics(),
+                crossAxisCount: 5,
+                mainAxisSpacing: 8,
+                crossAxisSpacing: 8,
+                children: [
+                  for (var levelId = 1; levelId <= category.levels; levelId++)
+                    ElevatedButton(
+                      onPressed: () => Get.toNamed(
+                        Routes.levelPlay,
+                        arguments: <String, dynamic>{
+                          // The level file's folder id (e.g. "departure"),
+                          // not the localized display name - LevelService
+                          // uses this to build the asset path directly.
+                          'category': category.categoryId,
+                          'id': levelId,
+                        },
+                      ),
+                      child: Text('$levelId'),
+                    ),
+                ],
+              ),
+            ),
+          );
+        },
       ),
     );
   }

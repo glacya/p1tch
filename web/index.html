@@ -42,7 +42,15 @@
     * https://docs.flutter.dev/platform-integration/web/initialization
   -->
   <script src="flutter_bootstrap.js" async></script>
-  <script src="assets/packages/flutter_soloud/web/libflutter_soloud_plugin.js" defer></script>
+  <!--
+    Only init_module.dart.js should be listed here - it auto-detects
+    whether the page is cross-origin isolated and loads the matching
+    flutter_soloud WASM build (multi- or single-threaded) itself. Manually
+    pre-loading libflutter_soloud_plugin.js here would skip that detection
+    and make flutter_soloud treat the build as an unverified "manual"
+    flavor, printing a spurious cross-origin-isolation warning even when
+    the single-threaded build is what's actually loaded.
+  -->
   <script src="assets/packages/flutter_soloud/web/init_module.dart.js" defer></script>
 </body>
 </html>

@@ -26,6 +26,7 @@ class MyApp extends StatelessWidget {
       theme: AppTheme.light,
       initialRoute: Routes.home,
       getPages: AppPages.pages,
+      debugShowCheckedModeBanner: false,
     );
   }
 }

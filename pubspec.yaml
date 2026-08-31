@@ -73,7 +73,8 @@ flutter:
     - assets/audio/piano/
 
     # Level data
-    - assets/levels/departure
+    - assets/levels/departure/
+    - assets/levels/dreaming/
 
   # To add assets to your application, add an assets section, like this:
   # assets:

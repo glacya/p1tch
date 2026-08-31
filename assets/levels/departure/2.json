@@ -1,0 +1,106 @@
+{
+    "category": "departure",
+    "id": 2,
+    "width": 7,
+    "height": 2,
+    "tiles": [
+        {
+            "x": 0,
+            "y": 0,
+            "semitone": 3,
+            "timbre": "piano",
+            "fixed": true
+        },
+        {
+            "x": 1,
+            "y": 0,
+            "semitone": 5,
+            "timbre": "piano",
+            "fixed": false
+        },
+        {
+            "x": 2,
+            "y": 0,
+            "semitone": 7,
+            "timbre": "piano",
+            "fixed": false
+        },
+        {
+            "x": 3,
+            "y": 0,
+            "semitone": 8,
+            "timbre": "piano",
+            "fixed": false
+        },
+        {
+            "x": 4,
+            "y": 0,
+            "semitone": 10,
+            "timbre": "piano",
+            "fixed": false
+        },
+        {
+            "x": 5,
+            "y": 0,
+            "semitone": 12,
+            "timbre": "piano",
+            "fixed": false
+        },
+        {
+            "x": 6,
+            "y": 0,
+            "semitone": 14,
+            "timbre": "piano",
+            "fixed": true
+        },
+        {
+            "x": 0,
+            "y": 1,
+            "semitone": 15,
+            "timbre": "piano",
+            "fixed": true
+        },
+        {
+            "x": 1,
+            "y": 1,
+            "semitone": 17,
+            "timbre": "piano",
+            "fixed": false
+        },
+        {
+            "x": 2,
+            "y": 1,
+            "semitone": 19,
+            "timbre": "piano",
+            "fixed": false
+        },
+        {
+            "x": 3,
+            "y": 1,
+            "semitone": 20,
+            "timbre": "piano",
+            "fixed": false
+        },
+        {
+            "x": 4,
+            "y": 1,
+            "semitone": 22,
+            "timbre": "piano",
+            "fixed": false
+        },
+        {
+            "x": 5,
+            "y": 1,
+            "semitone": 24,
+            "timbre": "piano",
+            "fixed": false
+        },
+        {
+            "x": 6,
+            "y": 1,
+            "semitone": 26,
+            "timbre": "piano",
+            "fixed": true
+        }
+    ]
+}

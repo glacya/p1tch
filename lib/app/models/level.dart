@@ -1,14 +1,27 @@
 import 'package:p2tch/app/models/audio.dart';
+import 'package:p2tch/app/models/category.dart';
 
 class Level {
-  late String category;
+  late Category category;
   late int id;
   late int width;
   late int height;
 
   bool completed = false;
-  final Map<(int, int), LevelCell> cells = {};
-  final Map<(int, int), double> _solution = {};
+
+  /// Tile content, keyed by a stable per-tile id (its index in
+  /// [LevelData.tiles]). Never changes after [init] - only [positions] moves
+  /// during a shuffle/swap. This is also the id a widget should key itself
+  /// on so implicit position animations (e.g. AnimatedPositioned) track the
+  /// right tile across a swap.
+  final Map<int, LevelCell> cells = {};
+
+  /// Each tile's current board coordinate, by id. The only thing [swap]
+  /// mutates.
+  final Map<int, (int, int)> positions = {};
+
+  /// Each tile's target ("solved") coordinate, by id.
+  final Map<int, (int, int)> _solution = {};
 
   Level();
 
@@ -25,65 +38,66 @@ class Level {
   // load anything itself.
   void init(LevelData data) {
     cells.clear();
+    positions.clear();
     _solution.clear();
 
-    category = data.category;
+    category = data.categoryInfo;
     id = data.id;
     width = data.width;
     height = data.height;
 
-    for (final tile in data.tiles) {
-      _solution[(tile.x, tile.y)] = tile.semitone;
+    for (var i = 0; i < data.tiles.length; i++) {
+      final tile = data.tiles[i];
+      cells[i] = LevelCell(tile.semitone, tile.audio, tile.fixed);
+      _solution[i] = (tile.x, tile.y);
     }
 
-    final fixedTiles = data.tiles.where((t) => t.fixed);
-    for (final tile in fixedTiles) {
-      cells[(tile.x, tile.y)] = LevelCell(tile.semitone, tile.audio, true);
+    for (var i = 0; i < data.tiles.length; i++) {
+      if (data.tiles[i].fixed) {
+        positions[i] = _solution[i]!;
+      }
     }
 
-    final nonFixedTiles = data.tiles.where((t) => !t.fixed).toList();
-    final coords = nonFixedTiles.map((t) => (t.x, t.y)).toList();
-    final shuffled = _shuffledNonFixedTiles(nonFixedTiles);
+    final nonFixedIds = [
+      for (var i = 0; i < data.tiles.length; i++)
+        if (!data.tiles[i].fixed) i,
+    ];
+    final nonFixedCoords = nonFixedIds.map((i) => _solution[i]!).toList();
+    final shuffledIds = _shuffledIds(nonFixedIds);
 
-    for (var i = 0; i < nonFixedTiles.length; i++) {
-      final tile = shuffled[i];
-      cells[coords[i]] = LevelCell(tile.semitone, tile.audio, false);
+    for (var i = 0; i < nonFixedIds.length; i++) {
+      positions[shuffledIds[i]] = nonFixedCoords[i];
     }
   }
 
-  /// Shuffles [nonFixedTiles]' values among themselves (coordinates are
-  /// assigned by the caller in original order - only the values move),
-  /// rejecting any shuffle that leaves more than `nonFixedTiles.length ~/ 8`
-  /// tiles landing back on their own original index.
+  /// Shuffles [ids] (a copy - the input list is left untouched), rejecting
+  /// any permutation that leaves more than `ids.length ~/ 8` entries at
+  /// their original index - i.e. more than that many tiles would start
+  /// already on their own solved coordinate.
   ///
-  /// For exactly 1 non-fixed tile this bound is 0, which is unsatisfiable
-  /// (a single-element shuffle always "lands on itself"). That's a degenerate
-  /// level design (nothing to actually solve), so it's left unshuffled
-  /// rather than looping forever - flag such levels separately if needed.
-  static List<LevelTileData> _shuffledNonFixedTiles(
-    List<LevelTileData> nonFixedTiles,
-  ) {
-    final n = nonFixedTiles.length;
+  /// For exactly 1 id this bound is 0, which is unsatisfiable (a single-
+  /// element shuffle always "lands on itself"). That's a degenerate level
+  /// design (nothing to actually solve), so it's left unshuffled rather
+  /// than looping forever - flag such levels separately if needed.
+  static List<int> _shuffledIds(List<int> ids) {
+    final n = ids.length;
     if (n <= 1) {
-      return nonFixedTiles;
+      return ids;
     }
 
     final maxAllowedMatches = n ~/ 8;
-    final shuffled = List<LevelTileData>.of(nonFixedTiles);
+    final shuffled = List<int>.of(ids);
     do {
       shuffled.shuffle();
-    } while (_countMatches(nonFixedTiles, shuffled) > maxAllowedMatches);
+    } while (_countMatches(ids, shuffled) > maxAllowedMatches);
 
     return shuffled;
   }
 
-  static int _countMatches(
-    List<LevelTileData> original,
-    List<LevelTileData> shuffled,
-  ) {
+  static int _countMatches(List<int> original, List<int> shuffled) {
     var count = 0;
     for (var i = 0; i < original.length; i++) {
-      if (identical(original[i], shuffled[i])) {
+      if (original[i] == shuffled[i]) {
         count++;
       }
     }
@@ -91,26 +105,23 @@ class Level {
   }
 
   bool checkCompleteness() {
-    return _solution.entries.every(
-      (entry) => cells[entry.key]?.relativeSemitone == entry.value,
-    );
+    return positions.entries.every((entry) => entry.value == _solution[entry.key]);
   }
 
-  bool swap((int, int) c1, (int, int) c2) {
-    assert(cells.containsKey(c1) && cells.containsKey(c2));
+  bool swap(int id1, int id2) {
+    assert(positions.containsKey(id1) && positions.containsKey(id2));
 
-    if (c1 == c2) {
+    if (id1 == id2) {
       return false;
     }
 
-    final (a, b) = (cells[c1]!, cells[c2]!);
-
-    if (a.fixed || b.fixed) {
+    if (cells[id1]!.fixed || cells[id2]!.fixed) {
       return false;
     }
 
-    cells[c1] = b;
-    cells[c2] = a;
+    final (a, b) = (positions[id1]!, positions[id2]!);
+    positions[id1] = b;
+    positions[id2] = a;
 
     return true;
   }
@@ -129,12 +140,14 @@ class LevelCell {
 }
 
 /// Plain mirror of a level's JSON file (`assets/levels/<category>/<id>.json`)
-/// - see that file for the exact shape. [LevelTileData.audio] is not part of
-/// the JSON: [LevelService] resolves it via [AudioService] while building
-/// this, so it is already loaded (`source != null`) by the time [Level.init]
-/// runs.
+/// - see that file for the exact shape. [LevelTileData.audio] and
+/// [categoryInfo] are not part of the JSON: [LevelService] resolves them
+/// (via [AudioService] and its own category cache respectively) while
+/// building this, so both are already loaded/available by the time
+/// [Level.init] runs.
 class LevelData {
   final String category;
+  final Category categoryInfo;
   final int id;
   final int width;
   final int height;
@@ -142,6 +155,7 @@ class LevelData {
 
   LevelData({
     required this.category,
+    required this.categoryInfo,
     required this.id,
     required this.width,
     required this.height,
