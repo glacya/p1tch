@@ -49,10 +49,10 @@ class LevelPlayView extends GetView<LevelPlayController> {
           );
         } else {
           final level = controller.level!;
-          if (level.completed && !controller.completionPopupShown) {
-            controller.completionPopupShown = true;
+          if (level.completed && !controller.completionSequenceStarted) {
+            controller.completionSequenceStarted = true;
             WidgetsBinding.instance.addPostFrameCallback((_) {
-              _showCompletionPopup(level, palette);
+              _playCompletionSequence(controller, level, palette, rippleKey);
             });
           }
 
@@ -158,10 +158,7 @@ class LevelPlayView extends GetView<LevelPlayController> {
   ) {
     final cell = level.cells[tileId]!;
     final (x, y) = level.positions[tileId]!;
-    final center = Offset(
-      (x + 0.5) * _cellSize,
-      (level.height - 1 - y + 0.5) * _cellSize,
-    );
+    final center = _tileCenter(level, tileId);
 
     return AnimatedPositioned(
       key: ValueKey(tileId),
@@ -244,8 +241,47 @@ class LevelPlayView extends GetView<LevelPlayController> {
           ),
         ],
       ),
-      child: Container(), // TODO: Put something that can identify tiles.
+      child: Container(child: Text('${cell.relativeSemitone}')), // TODO: Put something that can identify tiles.
     );
+  }
+
+  Offset _tileCenter(Level level, int tileId) {
+    final (x, y) = level.positions[tileId]!;
+    return Offset(
+      (x + 0.5) * _cellSize,
+      (level.height - 1 - y + 0.5) * _cellSize,
+    );
+  }
+
+  /// Plays every tile's sound + ripple in ascending pitch order, 0.25s apart
+  /// (120bpm quarter notes) - the same effect a tap produces - then waits 1s
+  /// before showing the completion dialog. isClosed is checked at each step
+  /// since this runs across several seconds of Future.delayed gaps, during
+  /// which the user could navigate away (e.g. the header's back button,
+  /// which isn't gated by the tap-blocking in onTileTap).
+  Future<void> _playCompletionSequence(
+    LevelPlayController controller,
+    Level level,
+    CategoryPalette palette,
+    GlobalKey<_RippleLayerState> rippleKey,
+  ) async {
+    final orderedIds = level.cells.keys.toList()
+      ..sort((a, b) => level.cells[a]!.relativeSemitone
+          .compareTo(level.cells[b]!.relativeSemitone));
+
+    for (var i = 0; i < orderedIds.length; i++) {
+      if (controller.isClosed) return;
+      final tileId = orderedIds[i];
+      controller.playTileSound(tileId);
+      rippleKey.currentState?.addRipple(_tileCenter(level, tileId));
+      if (i < orderedIds.length - 1) {
+        await Future.delayed(const Duration(milliseconds: 250));
+      }
+    }
+
+    await Future.delayed(const Duration(seconds: 1));
+    if (controller.isClosed) return;
+    _showCompletionPopup(level, palette);
   }
 
   void _showCompletionPopup(Level level, CategoryPalette palette) {

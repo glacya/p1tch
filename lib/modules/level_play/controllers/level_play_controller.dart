@@ -28,9 +28,10 @@ class LevelPlayController extends GetxController {
   /// this at 2). canDrag stays locked until this reaches 0.
   int _animatingCount = 0;
 
-  /// Whether the completion popup has already been shown for this
-  /// completion. Lives here for the same reason as canDrag/_animatingCount.
-  bool completionPopupShown = false;
+  /// Whether the completion celebration sequence has already been started
+  /// for this completion. Lives here for the same reason as
+  /// canDrag/_animatingCount.
+  bool completionSequenceStarted = false;
 
   @override
   void onInit() {
@@ -63,7 +64,7 @@ class LevelPlayController extends GetxController {
       level = Level()..init(data);
       canDrag = true;
       _animatingCount = 0;
-      completionPopupShown = false;
+      completionSequenceStarted = false;
       isLoading = false;
       update();
     } catch (e) {
@@ -76,12 +77,22 @@ class LevelPlayController extends GetxController {
 
   void retry() => _load();
 
-  /// A plain tap/click on any tile (fixed or not) just plays its sound.
+  /// A plain tap/click on any tile (fixed or not) plays its sound - but not
+  /// once the level is completed, since the completion sequence takes over
+  /// tile playback from that point (and dragging is already locked via
+  /// canDrag by then).
   void onTileTap(int tileId) {
     final currentLevel = level;
-    if (currentLevel == null) return;
-    if (completionPopupShown) return;
+    if (currentLevel == null || currentLevel.completed) return;
+    playTileSound(tileId);
+  }
 
+  /// Plays [tileId]'s sound unconditionally - used by onTileTap and by the
+  /// view's completion celebration sequence (which must still play sounds
+  /// after completed is already true).
+  void playTileSound(int tileId) {
+    final currentLevel = level;
+    if (currentLevel == null) return;
     final cell = currentLevel.cells[tileId]!;
     SoLoud.instance.play(
       cell.sample.source!,
