@@ -20,26 +20,36 @@ abstract class AppPages {
       name: Routes.home,
       page: () => const HomeView(),
       binding: HomeBinding(),
+      transition: Transition.fade,
+      transitionDuration: const Duration(milliseconds: 300),
     ),
     GetPage(
       name: Routes.levelCategory,
       page: () => const LevelCategoryView(),
       binding: LevelCategoryBinding(),
+      transition: Transition.fade,
+      transitionDuration: const Duration(milliseconds: 300),
     ),
     GetPage(
       name: Routes.levelSelect,
       page: () => const LevelSelectView(),
       binding: LevelSelectBinding(),
+      transition: Transition.fade,
+      transitionDuration: const Duration(milliseconds: 300),
     ),
     GetPage(
       name: Routes.levelPlay,
       page: () => const LevelPlayView(),
       binding: LevelPlayBinding(),
+      transition: Transition.fade,
+      transitionDuration: const Duration(milliseconds: 300),
     ),
     GetPage(
       name: Routes.settings,
       page: () => const SettingsView(),
       binding: SettingsBinding(),
+      transition: Transition.fade,
+      transitionDuration: const Duration(milliseconds: 300),
     ),
   ];
 }

@@ -20,6 +20,18 @@ class LevelPlayController extends GetxController {
   bool isLoading = true;
   String? errorMessage;
 
+  /// Whether a new drag can start right now.
+  bool canDrag = true;
+
+  /// Tiles still mid-slide after the most recent swap (swap always moves
+  /// exactly 2 tiles to different coordinates, so a successful swap starts
+  /// this at 2). canDrag stays locked until this reaches 0.
+  int _animatingCount = 0;
+
+  /// Whether the completion popup has already been shown for this
+  /// completion. Lives here for the same reason as canDrag/_animatingCount.
+  bool completionPopupShown = false;
+
   @override
   void onInit() {
     super.onInit();
@@ -49,6 +61,9 @@ class LevelPlayController extends GetxController {
       final data = await _levelService.loadLevelData(category!, id!);
       if (isClosed) return;
       level = Level()..init(data);
+      canDrag = true;
+      _animatingCount = 0;
+      completionPopupShown = false;
       isLoading = false;
       update();
     } catch (e) {
@@ -65,12 +80,25 @@ class LevelPlayController extends GetxController {
   void onTileTap(int tileId) {
     final currentLevel = level;
     if (currentLevel == null) return;
+    if (completionPopupShown) return;
 
     final cell = currentLevel.cells[tileId]!;
     SoLoud.instance.play(
       cell.sample.source!,
       scale: cell.sample.frequencyRatio(cell.relativeSemitone),
     );
+  }
+
+  void onDragStarted() {
+    canDrag = false;
+    update();
+  }
+
+  void onDragCanceled() {
+    final currentLevel = level;
+    if (currentLevel == null || currentLevel.completed) return;
+    canDrag = true;
+    update();
   }
 
   /// A tile was dragged from [draggedId] and dropped onto [targetId] - swaps
@@ -80,9 +108,29 @@ class LevelPlayController extends GetxController {
     final currentLevel = level;
     if (currentLevel == null) return;
 
-    currentLevel.swap(draggedId, targetId);
-    if (currentLevel.checkCompleteness()) {
-      currentLevel.completed = true;
+    final moved = currentLevel.swap(draggedId, targetId);
+    if (moved) {
+      _animatingCount = 2;
+      if (currentLevel.checkCompleteness()) {
+        currentLevel.completed = true;
+      }
+    } else {
+      // onWillAcceptWithDetails already filters these out, so this
+      // shouldn't normally be reached - but if it is, release the lock
+      // onDragStarted set, since no animation will follow to release it.
+      canDrag = !currentLevel.completed;
+    }
+    update();
+  }
+
+  /// A tile's AnimatedPositioned finished sliding into place after a swap.
+  void onTileMoveAnimationEnd() {
+    final currentLevel = level;
+    if (currentLevel == null) return;
+
+    if (_animatingCount > 0) _animatingCount--;
+    if (_animatingCount == 0 && !currentLevel.completed) {
+      canDrag = true;
     }
     update();
   }

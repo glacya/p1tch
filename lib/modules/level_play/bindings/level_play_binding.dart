@@ -17,6 +17,14 @@ class LevelPlayBinding extends Bindings {
       if (rawId is int) id = rawId;
     }
 
+    // Get.lazyPut() is a no-op if a LevelPlayController is already
+    // registered (e.g. navigating level_play -> level_play again for the
+    // "Next Level" button) - it won't rebuild with the new arguments unless
+    // the stale instance is removed first.
+    if (Get.isRegistered<LevelPlayController>()) {
+      Get.delete<LevelPlayController>();
+    }
+
     Get.lazyPut<LevelPlayController>(
       () => LevelPlayController(
         category: category,

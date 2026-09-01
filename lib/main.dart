@@ -23,7 +23,7 @@ class MyApp extends StatelessWidget {
   Widget build(BuildContext context) {
     return GetMaterialApp(
       title: 'P1tch',
-      theme: AppTheme.light,
+      theme: AppTheme.core,
       initialRoute: Routes.home,
       getPages: AppPages.pages,
       debugShowCheckedModeBanner: false,

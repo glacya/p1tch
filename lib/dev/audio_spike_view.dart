@@ -1,4 +1,4 @@
-import 'dart:math' as math;
+// import 'dart:math' as math;
 
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart' show rootBundle;
@@ -22,8 +22,8 @@ class AudioSpikeView extends StatefulWidget {
 
 class _AudioSpikeViewState extends State<AudioSpikeView> {
   static const _fileName = 'piano/a4.wav';
-  static final _minRatio = math.sqrt2 / 2;
-  static final _maxRatio = math.sqrt2;
+  static final double _minRatio = 1 / 8;
+  static final double _maxRatio = 8.0;
 
   var _status = 'Loading...';
   var _ready = false;

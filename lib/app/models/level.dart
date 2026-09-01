@@ -75,10 +75,7 @@ class Level {
   /// their original index - i.e. more than that many tiles would start
   /// already on their own solved coordinate.
   ///
-  /// For exactly 1 id this bound is 0, which is unsatisfiable (a single-
-  /// element shuffle always "lands on itself"). That's a degenerate level
-  /// design (nothing to actually solve), so it's left unshuffled rather
-  /// than looping forever - flag such levels separately if needed.
+  /// Ignore n = 1 case since it is degenerate one.
   static List<int> _shuffledIds(List<int> ids) {
     final n = ids.length;
     if (n <= 1) {

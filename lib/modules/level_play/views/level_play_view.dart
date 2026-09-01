@@ -1,8 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
+import 'package:p2tch/app/constants/color_constants.dart';
 import 'package:p2tch/app/models/level.dart';
+import 'package:p2tch/app/theme/app_theme.dart';
 import 'package:p2tch/app/utils/locale_utils.dart';
 
+import '../../../app/routes/app_routes.dart';
 import '../controllers/level_play_controller.dart';
 
 enum _Aura { normal, fixed, dragging, hover }
@@ -10,7 +13,7 @@ enum _Aura { normal, fixed, dragging, hover }
 class LevelPlayView extends GetView<LevelPlayController> {
   const LevelPlayView({super.key});
 
-  static const double _cellSize = 128.0;
+  static const double _cellSize = 120.0;
 
   @override
   Widget build(BuildContext context) {
@@ -20,36 +23,45 @@ class LevelPlayView extends GetView<LevelPlayController> {
     // _RippleLayerState via rippleKey.currentState on every call.
     final rippleKey = GlobalKey<_RippleLayerState>();
 
-    return Scaffold(
-      body: GetBuilder<LevelPlayController>(
-        builder: (controller) {
-          if (controller.isLoading) {
-            return const Center(child: CircularProgressIndicator());
-          }
-          if (controller.errorMessage != null) {
-            return Center(
-              child: Column(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  Text(controller.errorMessage!),
-                  const SizedBox(height: 12),
-                  ElevatedButton(
-                    onPressed: controller.retry,
-                    child: const Text('Retry'),
-                  ),
-                ],
-              ),
-            );
+    return GetBuilder<LevelPlayController>(
+      builder: (controller) {
+        // Use default palette (which is of 'departure' category) if loading fails somehow.
+        final palette =
+            CategoryColors.palettes[controller.level?.category.categoryId] ??
+                CategoryColors.palettes['departure']!;
+
+        final Widget body;
+        if (controller.isLoading) {
+          body = const Center(child: CircularProgressIndicator());
+        } else if (controller.errorMessage != null) {
+          body = Center(
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Text(controller.errorMessage!),
+                const SizedBox(height: 12),
+                ElevatedButton(
+                  onPressed: controller.retry,
+                  child: const Text('Retry'),
+                ),
+              ],
+            ),
+          );
+        } else {
+          final level = controller.level!;
+          if (level.completed && !controller.completionPopupShown) {
+            controller.completionPopupShown = true;
+            WidgetsBinding.instance.addPostFrameCallback((_) {
+              _showCompletionPopup(level, palette);
+            });
           }
 
-          final level = controller.level!;
-          final colorScheme = Theme.of(context).colorScheme;
-          final boardWidget = Center(
+          body = Center(
             child: Column(
               mainAxisAlignment: MainAxisAlignment.start,
               crossAxisAlignment: CrossAxisAlignment.center,
               children: [
-                _levelUpperComponent(context, level),
+                _levelUpperComponent(context, level, palette),
                 Expanded(child: Container()),
                 SizedBox(
                   width: level.width * _cellSize,
@@ -59,28 +71,39 @@ class LevelPlayView extends GetView<LevelPlayController> {
                       Positioned.fill(
                         child: _RippleLayer(
                           key: rippleKey,
-                          color: colorScheme.primary,
+                          color: palette.ripple,
                         ),
                       ),
                       for (final tileId in level.cells.keys)
-                        _buildTile(context, controller, level, tileId, rippleKey),
-                    ]
-                  )
+                        _buildTile(
+                          context,
+                          controller,
+                          level,
+                          tileId,
+                          rippleKey,
+                          palette,
+                        ),
+                    ],
+                  ),
                 ),
                 Expanded(child: Container()),
-              ]
-            )
+              ],
+            ),
           );
+        }
 
-          return boardWidget;
-        },
-      ),
+        return Theme(
+          data: themeFromPalette(palette),
+          child: Scaffold(body: body),
+        );
+      },
     );
   }
 
   Widget _levelUpperComponent(
     BuildContext context,
     Level level,
+    CategoryPalette palette,
   ) {
     final levelName = level.category;
     final levelId = level.id;
@@ -93,7 +116,7 @@ class LevelPlayView extends GetView<LevelPlayController> {
           width: 40,
           height: 40,
           margin: const EdgeInsets.all(20),
-          decoration: BoxDecoration(
+          decoration: const BoxDecoration(
             shape: BoxShape.circle,
           ),
           child: InkWell(
@@ -103,7 +126,7 @@ class LevelPlayView extends GetView<LevelPlayController> {
             borderRadius: const BorderRadius.all(Radius.circular(20)),
             child: Icon(
               Icons.chevron_left,
-              color: Colors.black,
+              color: palette.text,
               size: 30,
             ),
           )
@@ -131,6 +154,7 @@ class LevelPlayView extends GetView<LevelPlayController> {
     Level level,
     int tileId,
     GlobalKey<_RippleLayerState> rippleKey,
+    CategoryPalette palette,
   ) {
     final cell = level.cells[tileId]!;
     final (x, y) = level.positions[tileId]!;
@@ -147,13 +171,14 @@ class LevelPlayView extends GetView<LevelPlayController> {
       top: (level.height - 1 - y) * _cellSize,
       width: _cellSize,
       height: _cellSize,
+      onEnd: () => controller.onTileMoveAnimationEnd(),
       child: DragTarget<int>(
         onWillAcceptWithDetails: (details) =>
             !cell.fixed && details.data != tileId,
         onAcceptWithDetails: (details) {
           controller.onTileDrop(details.data, tileId);
-          // rippleKey.currentState?.addRipple(center);
         },
+        
         builder: (context, candidateData, rejectedData) {
           final isHovering = candidateData.isNotEmpty;
           final aura = isHovering
@@ -165,7 +190,7 @@ class LevelPlayView extends GetView<LevelPlayController> {
               controller.onTileTap(tileId);
               rippleKey.currentState?.addRipple(center);
             },
-            child: _tileVisual(context, cell, aura),
+            child: _tileVisual(context, cell, aura, palette),
           );
 
           if (cell.fixed) {
@@ -174,10 +199,14 @@ class LevelPlayView extends GetView<LevelPlayController> {
 
           return Draggable<int>(
             data: tileId,
+            maxSimultaneousDrags: controller.canDrag ? 1 : 0,
+            onDragStarted: () => controller.onDragStarted(),
+            onDraggableCanceled: (velocity, offset) =>
+                controller.onDragCanceled(),
             feedback: SizedBox(
               width: _cellSize,
               height: _cellSize,
-              child: _tileVisual(context, cell, _Aura.dragging),
+              child: _tileVisual(context, cell, _Aura.dragging, palette),
             ),
             childWhenDragging: Opacity(opacity: 0.3, child: tapArea),
             child: tapArea,
@@ -187,22 +216,26 @@ class LevelPlayView extends GetView<LevelPlayController> {
     );
   }
 
-  Widget _tileVisual(BuildContext context, LevelCell cell, _Aura aura) {
-    final colorScheme = Theme.of(context).colorScheme;
+  Widget _tileVisual(
+    BuildContext context,
+    LevelCell cell,
+    _Aura aura,
+    CategoryPalette palette,
+  ) {
     final Color auraColor = switch (aura) {
-      _Aura.fixed => colorScheme.secondary,
-      _Aura.dragging => colorScheme.primary,
-      _Aura.hover => colorScheme.tertiary,
-      _Aura.normal => colorScheme.outline,
+      _Aura.fixed => palette.auraFixed,
+      _Aura.dragging => palette.auraDragging,
+      _Aura.hover => palette.auraHover,
+      _Aura.normal => palette.border,
     };
     final bool emphasized = aura == _Aura.dragging || aura == _Aura.hover;
 
     return Container(
-      margin: const EdgeInsets.all(4),
+      margin: const EdgeInsets.all(16),
       alignment: Alignment.center,
       decoration: BoxDecoration(
         shape: BoxShape.circle,
-        color: colorScheme.surfaceContainerHighest,
+        color: palette.surface,
         boxShadow: [
           BoxShadow(
             color: auraColor.withValues(alpha: 0.7),
@@ -211,7 +244,61 @@ class LevelPlayView extends GetView<LevelPlayController> {
           ),
         ],
       ),
-      child: Text(cell.relativeSemitone.toStringAsFixed(1)),
+      child: Container(), // TODO: Put something that can identify tiles.
+    );
+  }
+
+  void _showCompletionPopup(Level level, CategoryPalette palette) {
+    final isLastLevel = level.id >= level.category.levels;
+
+    Get.dialog<void>(
+      Theme(
+        data: themeFromPalette(palette),
+        child: Dialog(
+          child: PopScope<void>(
+            // Blocks the system back gesture/button from dismissing this
+            // dialog. The explicit Get.back() calls in the buttons below
+            // don't go through this gate - PopScope only intercepts
+            // system-initiated pop attempts.
+            canPop: false,
+            child: Padding(
+              padding: const EdgeInsets.all(24),
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  const Text('Cleared!'),
+                  const SizedBox(height: 16),
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                    children: [
+                      TextButton(
+                        onPressed: () => Get.back(closeOverlays: true),
+                        child: const Text('Level List'),
+                      ),
+                      if (!isLastLevel)
+                        TextButton(
+                          onPressed: () {
+                            Get.back();
+                            Get.offNamed(
+                              Routes.levelPlay,
+                              arguments: <String, dynamic>{
+                                'category': level.category.categoryId,
+                                'id': level.id + 1,
+                              },
+                              preventDuplicates: false,
+                            );
+                          },
+                          child: const Text('Next Level'),
+                        ),
+                    ],
+                  ),
+                ],
+              ),
+            ),
+          ),
+        ),
+      ),
+      barrierDismissible: false,
     );
   }
 }
@@ -232,7 +319,7 @@ class _RippleLayer extends StatefulWidget {
 
 class _RippleLayerState extends State<_RippleLayer>
     with TickerProviderStateMixin {
-  static const _duration = Duration(milliseconds: 2000);
+  static const _duration = Duration(milliseconds: 1800);
   static const _maxRadius = 1000.0;
 
   final List<_Ripple> _ripples = [];
