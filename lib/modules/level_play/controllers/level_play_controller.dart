@@ -33,6 +33,15 @@ class LevelPlayController extends GetxController {
   /// canDrag/_animatingCount.
   bool completionSequenceStarted = false;
 
+  /// Rate-limits onTileTap: rapid repeated tapping can pile up more ~2s-long
+  /// overlapping voices than the audio engine handles gracefully (seen as
+  /// dropped/garbled playback - possibly a voice-churn regression similar to
+  /// one already fixed upstream for an older version). A tap within the
+  /// cooldown window is silently ignored rather than cutting off whatever is
+  /// already ringing, which would be more jarring than a missed tap.
+  final Stopwatch _tapCooldown = Stopwatch()..start();
+  static const Duration _tapCooldownDuration = Duration(milliseconds: 150);
+
   @override
   void onInit() {
     super.onInit();
@@ -84,6 +93,8 @@ class LevelPlayController extends GetxController {
   void onTileTap(int tileId) {
     final currentLevel = level;
     if (currentLevel == null || currentLevel.completed) return;
+    if (_tapCooldown.elapsed < _tapCooldownDuration) return;
+    _tapCooldown.reset();
     playTileSound(tileId);
   }
 

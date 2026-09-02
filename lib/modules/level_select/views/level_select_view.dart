@@ -48,14 +48,12 @@ class LevelSelectView extends GetView<LevelSelectController> {
               child: GridView.count(
                 shrinkWrap: true,
                 physics: const NeverScrollableScrollPhysics(),
-                crossAxisCount: 5,
+                crossAxisCount: 5,  // TODO: Adjust the value along with the screen size.
                 mainAxisSpacing: 12,
                 crossAxisSpacing: 12,
                 children: [
-                  // for (var levelId = 1; levelId <= category.levels; levelId++)
-                  //   _levelButton(category, levelId, palette),
-                  for (var levelId = 1; levelId <= 20; levelId++)
-                    _levelButton(category, 1, palette)
+                  for (var levelId = 1; levelId <= category.levels; levelId++)
+                    _levelButton(category, levelId, palette),
                 ],
               ),
             ),
