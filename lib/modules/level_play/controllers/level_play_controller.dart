@@ -10,11 +10,18 @@ class LevelPlayController extends GetxController {
     required this.category,
     required this.id,
     required this._levelService,
+    this.preloadedData,
   });
 
   final String? category; // null means missing/malformed nav arguments
   final int? id;
   final LevelService _levelService;
+
+  /// Already-loaded level data, handed off by LevelLoadingController so
+  /// this screen doesn't load it a second time. Null for any path that
+  /// reaches level_play directly (e.g. the completion popup's "Next Level"
+  /// button), which falls back to loading it here as before.
+  final LevelData? preloadedData;
 
   Level? level;
   bool isLoading = true;
@@ -68,7 +75,8 @@ class LevelPlayController extends GetxController {
     update();
 
     try {
-      final data = await _levelService.loadLevelData(category!, id!);
+      final data =
+          preloadedData ?? await _levelService.loadLevelData(category!, id!);
       if (isClosed) return;
       level = Level()..init(data);
       canDrag = true;

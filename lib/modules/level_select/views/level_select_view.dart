@@ -82,7 +82,7 @@ class LevelSelectView extends GetView<LevelSelectController> {
       child: InkWell(
         borderRadius: const BorderRadius.all(Radius.circular(5)),
         onTap: () => Get.toNamed(
-          Routes.levelPlay,
+          Routes.levelLoading,
           arguments: <String, dynamic>{
             'category': category.categoryId,
             'id': levelId,

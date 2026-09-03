@@ -1,4 +1,5 @@
 import 'package:get/get.dart';
+import 'package:p2tch/app/models/level.dart';
 import 'package:p2tch/app/services/level_service.dart';
 
 import '../controllers/level_play_controller.dart';
@@ -9,12 +10,15 @@ class LevelPlayBinding extends Bindings {
     final arguments = Get.arguments;
     String? category;
     int? id;
+    LevelData? preloadedData;
 
     if (arguments is Map) {
       final rawCategory = arguments['category'];
       final rawId = arguments['id'];
+      final rawPreloaded = arguments['preloadedLevelData'];
       if (rawCategory is String) category = rawCategory;
       if (rawId is int) id = rawId;
+      if (rawPreloaded is LevelData) preloadedData = rawPreloaded;
     }
 
     // Get.lazyPut() is a no-op if a LevelPlayController is already
@@ -30,6 +34,7 @@ class LevelPlayBinding extends Bindings {
         category: category,
         id: id,
         levelService: Get.find<LevelService>(),
+        preloadedData: preloadedData,
       ),
     );
   }
