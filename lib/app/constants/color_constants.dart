@@ -59,16 +59,20 @@ class CategoryColors {
       auraHover: Color(0xFF4CAF6D),
     ),
     'dreaming': CategoryPalette(
-      background: Color(0xFFF3E9FF),
-      text: Color(0xFF2E1B3D),
-      button: Color(0xFF8B5FBF),
+      background: Color.fromARGB(255, 31, 0, 70),
+      text: Color.fromARGB(255, 233, 205, 255),
+      button: Color.fromARGB(255, 157, 71, 255),
       buttonText: Color(0xFFFFFFFF),
-      border: Color(0xFFC5AEDB),
+      border: Color.fromARGB(255, 194, 159, 226),
       surface: Color(0xFFE3D1F7),
-      ripple: Color(0xFFB98EEB),
+      ripple: Color.fromARGB(255, 71, 0, 151),
       auraFixed: Color(0xFFE0A736),
       auraDragging: Color(0xFFE8623D),
       auraHover: Color(0xFF4CAF6D),
     ),
   };
+
+  static CategoryPalette defaultPalette() {
+    return palettes['departure']!;
+  }
 }

@@ -80,7 +80,7 @@ class LevelSelectView extends GetView<LevelSelectController> {
       width: _buttonSize,
       height: _buttonSize,
       child: InkWell(
-        borderRadius: const BorderRadius.all(Radius.circular(5)),
+        borderRadius: const BorderRadius.all(Radius.circular(_buttonSize / 10)),
         onTap: () => Get.toNamed(
           Routes.levelLoading,
           arguments: <String, dynamic>{
